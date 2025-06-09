@@ -7,3 +7,7 @@ sudo docker ps -a
 sudo docker stop 8d
 sudo docker rm 8d
 здесь 91 это первые два символа из id
+
+git add .
+git commit -m 'commit'
+git push

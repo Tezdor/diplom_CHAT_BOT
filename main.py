@@ -11,9 +11,11 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, FSInputF
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from images import create_pie_chart, create_gist_chart
-from help_text import help_text
+from images import *
+from help_text import *
 from dotenv import load_dotenv
+from openai import OpenAI
+
 load_dotenv()
 
 def escape_markdown(text: str) -> str:
@@ -39,12 +41,19 @@ class Money(StatesGroup):
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = getenv('TOKEN')
+
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 # All handlers should be attached to the Router (or Dispatcher)
 
 dp = Router()
 db = Database('diplom.sqlite3')
+
+a = getenv('KEY')
+client = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key=a,
+)
 
 
 @dp.message(CommandStart())
@@ -244,46 +253,8 @@ async def command_nacoplenie_goals_hendler( message: Message, state: FSMContext)
 async def history_hendler(message: Message):
     data = db.get_history_30(user_id=message.from_user.id)
     goals = db.get_goals(user_id=message.from_user.id)
+    stroka = get_history_text(data, goals)
 
-    income = []
-    expense = []
-
-    for i in data:
-        if i[-2] == 'income':
-            income.append(i)
-        else:
-            expense.append(i)
-
-    stroka = '***ДОХОДЫ:***\n'
-    for i in income:
-        stroka +=f'- {i[-1]} {i[3]}\n {i[4]}\n\n' 
-    
-    stroka+= '\n***РАСХОДЫ:***\n'
-    for i in expense:
-        stroka +=f'- {i[-1]} {i[3]}\n {i[4]}\n\n' 
-
-    stroka+= '\n***ЦЕЛИ:***\n'
-    for i in goals:
-        stroka +=f'- {i[2]}\n собрано {i[4]} из {i[3]}\n\n' 
-    
-    """ 
-    доходы: 
-    зарплата 6890
-    кот 1568390
-    итого: 567890
-
-    расходы:
-    кот 4699
-    это 56698
-    итого: 456789
-
-    цели накопления:
-    цель собака
-    накоплено 456789 из 456789
-
-    цель дом
-
-    """
     await message.answer(escape_markdown(stroka), parse_mode='MarkdownV2')
 
 @dp.message(Command('report'))
@@ -312,6 +283,37 @@ async def report_hendler(message:Message):
     await bot.send_photo(chat_id=message.chat.id, photo=png1)
     await bot.send_photo(chat_id=message.chat.id, photo=png2)
     await bot.send_photo(chat_id=message.chat.id, photo=png3)
+
+
+@dp.message(Command('sovet'))
+async def sovet_hendler(message: Message):
+    data = db.get_history_30(user_id=message.from_user.id)
+    goals = db.get_goals(user_id=message.from_user.id)
+    stroka = get_history_text(data, goals)
+    await message.answer("в раздумьях")
+    await bot.send_chat_action(chat_id=message.chat.id, action= 'typing')
+    completion = client.chat.completions.create(
+    model="deepseek/deepseek-r1-0528:free",
+    messages=[
+        {
+        "role": "user",
+        "content": f"""как я могу улучшить свои финансы? 
+        вот мои доходы и расходы { stroka }. 
+        не говори про дригие приложения по контролю финансов. 
+        не задавай никаких вопросов. 
+        отвечай коротко только на русском языке"""
+        }
+    ]
+    )
+
+    await bot.send_chat_action(chat_id=message.chat.id, action= 'typing')
+    
+    t = completion.choices[0].message.content
+    try:
+        await message.answer(escape_markdown(t.replace(' * ', '+')), parse_mode='MarkdownV2')
+    except:
+        await message.answer('попробуйте снова чуть позже, вселенная думает')
+  
 
 @dp.message()
 async def echo_handler(message: Message) -> None:

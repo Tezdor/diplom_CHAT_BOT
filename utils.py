@@ -23,11 +23,14 @@ class Database():
 
     def add_money(self, user_id, name, money):
         cursor = self.connection.cursor()
-        cursor.execute(""" select id, money from goals where name = ? and user_id = ? """, [name, user_id])
+        cursor.execute(""" select id, money, goal from goals where name = ? and user_id = ? """, [name, user_id])
         data = cursor.fetchone()
 
         new_money = data[1]+money
-        cursor.execute(""" update goals set money = ? where id = ? """, [new_money, data[0]])
+        if new_money > data[2]:
+            cursor.execute(""" update goals set money = ? where id = ? """, [data[2], data[0]])
+        else:
+            cursor.execute(""" update goals set money = ? where id = ? """, [new_money, data[0]])
         self.connection.commit()
 
     def get_income_categories(self):
@@ -57,7 +60,7 @@ class Database():
     def get_history_30(self, user_id):
         cursor = self.connection.cursor()
         cursor.execute(""" select * from operations join categories on categories.id=operations.categories_id where user_id = ? and
-                       date >= datetime('now', '-3 days') """, [user_id])
+                       date >= datetime('now', '-30 days') """, [user_id])
         data = cursor.fetchall()
         return data
 

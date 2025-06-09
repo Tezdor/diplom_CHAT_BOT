@@ -21,6 +21,8 @@ a = [
     ['expense', 'транспорт'],
     ['expense', 'другое'],
     ['expense', 'развлечения'],
+    ['expense', 'жкх'],
+    ['expense', 'связь'],
 
 ]
 cursor.executemany(""" insert or ignore into categories (type, name) values(?,?)  """, a)
