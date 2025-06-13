@@ -114,12 +114,15 @@ async def command_income_hendler( message: Message, state: FSMContext):
     
     money = message.text.replace(',', '.') 
     try:
-        float(money)
-        categories = await state.get_data()
-        categories = categories['categories']
-        db.add_operation(categories=categories, user_id=message.from_user.id, count=money)
-        await state.clear()
-        await message.answer('gotovo')
+        f = float(money)
+        if f <=0 :
+            await message.answer('введите число больше нуля')
+        else :
+            categories = await state.get_data()
+            categories = categories['categories']
+            db.add_operation(categories=categories, user_id=message.from_user.id, count=money)
+            await state.clear()
+            await message.answer('gotovo')
     except ValueError:
         await message.answer('введите число')
     
@@ -158,12 +161,15 @@ async def command_expense_hendler( message: Message, state: FSMContext):
     
     money = message.text.replace(',', '.') 
     try:
-        float(money)
-        categories = await state.get_data()
-        categories = categories['categories']
-        db.add_operation(categories=categories, user_id=message.from_user.id, count=money)
-        await state.clear()
-        await message.answer('done')  
+        f = float(money)
+        if f <=0 :
+            await message.answer('введите число больше нуля')
+        else :
+            categories = await state.get_data()
+            categories = categories['categories']
+            db.add_operation(categories=categories, user_id=message.from_user.id, count=money)
+            await state.clear()
+            await message.answer('done')  
     except ValueError:
         await message.answer('введите число')
        
@@ -194,12 +200,15 @@ async def command_goal_hendler( message: Message, state: FSMContext):
     
     goal = message.text.replace(',', '.') 
     try:
-        float(goal)
-        name = await state.get_data()
-        name = name['name']
-        db.add_goal(name=name, user_id=message.from_user.id, goal=goal)
-        await state.clear()
-        await message.answer('yes') 
+        f = float(goal)
+        if f <=0 :
+            await message.answer('введите число больше нуля')
+        else :
+            name = await state.get_data()
+            name = name['name']
+            db.add_goal(name=name, user_id=message.from_user.id, goal=goal)
+            await state.clear()
+            await message.answer('yes') 
     except ValueError:
         await message.answer('введите число')
 
